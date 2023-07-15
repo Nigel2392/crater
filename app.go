@@ -407,6 +407,10 @@ func SetTemplate(name string, f func(args ...interface{}) *jse.Element) {
 }
 
 // WithTemplate adds a template to the application.
+//
+// This function will panic if the template does not exist.
+//
+// The arguments passed to this function will be passed to the template function.
 func WithTemplate(name string, args ...interface{}) *jse.Element {
 	checkApp()
 	if application.templates == nil {
