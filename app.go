@@ -392,6 +392,8 @@ func WithMessenger(m Messenger) {
 }
 
 // WithEmbed sets the application's embed function.
+//
+// This can be used to embed the page element, useful for navbars, footers etc.
 func WithEmbed(f func(root *jse.Element) *jse.Element) {
 	checkApp()
 	application.elementEmbedFunc = f
