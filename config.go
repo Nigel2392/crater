@@ -54,5 +54,7 @@ type Config struct {
 	EmbedFunc func(page *jse.Element) *jse.Element `jsc:"-"`
 
 	// Templates which can be set, these can be used globally in the application.
-	Templates map[string]func() *jse.Element `jsc:"-"`
+	//
+	// The arguments passed to the function are the arguments passed to the template.
+	Templates map[string]func(args ...interface{}) *jse.Element `jsc:"-"`
 }
