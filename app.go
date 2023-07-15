@@ -24,16 +24,16 @@ var application *app
 
 type app struct {
 	*jse.Element     `jsc:"rootElement"`
-	elementEmbedFunc func(page *jse.Element) *jse.Element `jsc:"-"`
-	templates        map[string]func() *jse.Element       `jsc:"-"`
-	config           *Config                              `jsc:"-"`
-	exit             chan error                           `jsc:"-"`
-	Mux              *mux.Mux                             `jsc:"-"`
-	Loader           Loader                               `jsc:"-"`
-	Logger           Logger                               `jsc:"-"`
-	OnResponseError  func(error)                          `jsc:"-"`
-	Messenger        Messenger                            `jsc:"-"`
-	Websocket        *websocket.WebSocket                 `jsc:"-"`
+	elementEmbedFunc func(page *jse.Element) *jse.Element              `jsc:"-"`
+	templates        map[string]func(args ...interface{}) *jse.Element `jsc:"-"`
+	config           *Config                                           `jsc:"-"`
+	exit             chan error                                        `jsc:"-"`
+	Mux              *mux.Mux                                          `jsc:"-"`
+	Loader           Loader                                            `jsc:"-"`
+	Logger           Logger                                            `jsc:"-"`
+	OnResponseError  func(error)                                       `jsc:"-"`
+	Messenger        Messenger                                         `jsc:"-"`
+	Websocket        *websocket.WebSocket                              `jsc:"-"`
 }
 
 // Helper function to check if the application has been initialized
@@ -398,25 +398,25 @@ func WithEmbed(f func(root *jse.Element) *jse.Element) {
 }
 
 // SetTemplate sets the application's template.
-func SetTemplate(name string, f func() *jse.Element) {
+func SetTemplate(name string, f func(args ...interface{}) *jse.Element) {
 	checkApp()
 	if application.templates == nil {
-		application.templates = make(map[string]func() *jse.Element)
+		application.templates = make(map[string]func(args ...interface{}) *jse.Element)
 	}
 	application.templates[name] = f
 }
 
 // WithTemplate adds a template to the application.
-func WithTemplate(name string) *jse.Element {
+func WithTemplate(name string, args ...interface{}) *jse.Element {
 	checkApp()
 	if application.templates == nil {
-		application.templates = make(map[string]func() *jse.Element)
+		application.templates = make(map[string]func(args ...interface{}) *jse.Element)
 	}
 	var v, ok = application.templates[name]
 	if !ok || v == nil {
 		panic(fmt.Sprintf("Template %s not found", name))
 	}
-	return v()
+	return v(args...)
 }
 
 // WithNotFoundHandler sets the application's not found handler.
