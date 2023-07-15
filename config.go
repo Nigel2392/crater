@@ -49,6 +49,8 @@ type Config struct {
 	// Allows you to embed the canvas written to inside of another canvas.
 	//
 	// Useful for navbars, footers etc.
+	//
+	// The page should be embedded into the element returned by this function.
 	EmbedFunc func(page *jse.Element) *jse.Element `jsc:"-"`
 
 	// Templates which can be set, these can be used globally in the application.
