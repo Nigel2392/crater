@@ -23,15 +23,17 @@ func (f OnClickFunc) OnClick() {
 var application *app
 
 type app struct {
-	*jse.Element    `jsc:"rootElement"`
-	config          *Config              `jsc:"-"`
-	exit            chan error           `jsc:"-"`
-	Mux             *mux.Mux             `jsc:"-"`
-	Loader          Loader               `jsc:"-"`
-	Logger          Logger               `jsc:"-"`
-	OnResponseError func(error)          `jsc:"-"`
-	Messenger       Messenger            `jsc:"-"`
-	Websocket       *websocket.WebSocket `jsc:"-"`
+	*jse.Element     `jsc:"rootElement"`
+	elementEmbedFunc func(root *jse.Element)        `jsc:"-"`
+	templates        map[string]func() *jse.Element `jsc:"-"`
+	config           *Config                        `jsc:"-"`
+	exit             chan error                     `jsc:"-"`
+	Mux              *mux.Mux                       `jsc:"-"`
+	Loader           Loader                         `jsc:"-"`
+	Logger           Logger                         `jsc:"-"`
+	OnResponseError  func(error)                    `jsc:"-"`
+	Messenger        Messenger                      `jsc:"-"`
+	Websocket        *websocket.WebSocket           `jsc:"-"`
 }
 
 // Helper function to check if the application has been initialized
@@ -68,14 +70,16 @@ func New(c *Config) {
 		}
 	}
 	application = &app{
-		Mux:             mux.New(),
-		Element:         (*jse.Element)(&c.RootElement),
-		exit:            make(chan error),
-		config:          c,
-		Loader:          c.Loader,
-		Messenger:       c.Messenger,
-		Logger:          c.Logger,
-		OnResponseError: c.OnResponseError,
+		Mux:              mux.New(),
+		Element:          (*jse.Element)(&c.RootElement),
+		exit:             make(chan error),
+		config:           c,
+		Loader:           c.Loader,
+		Messenger:        c.Messenger,
+		Logger:           c.Logger,
+		OnResponseError:  c.OnResponseError,
+		elementEmbedFunc: c.EmbedFunc,
+		templates:        c.Templates,
 	}
 	application.Mux.InvokeHandler(c.Flags.Has(F_CHANGE_PAGE_EACH_CLICK))
 	application.Mux.FirstPage(c.InitialPageURL)
@@ -137,7 +141,7 @@ func Mux() *mux.Mux {
 }
 
 // Retrieve the application's root element.
-func Element() *jse.Element {
+func Canvas() *jse.Element {
 	checkApp()
 	return application.Element
 }
@@ -207,6 +211,11 @@ func makeHandleFunc(h PageFunc) mux.HandleFunc {
 			Variables: v,
 			Context:   context.Background(),
 		})
+
+		if application.elementEmbedFunc != nil {
+			application.elementEmbedFunc(canvas)
+		}
+
 		application.Element.AppendChild(canvas)
 	}
 }
@@ -380,6 +389,34 @@ func WithLogger(l Logger) {
 func WithMessenger(m Messenger) {
 	checkApp()
 	application.Messenger = m
+}
+
+// WithEmbed sets the application's embed function.
+func WithEmbed(f func(root *jse.Element)) {
+	checkApp()
+	application.elementEmbedFunc = f
+}
+
+// SetTemplate sets the application's template.
+func SetTemplate(name string, f func() *jse.Element) {
+	checkApp()
+	if application.templates == nil {
+		application.templates = make(map[string]func() *jse.Element)
+	}
+	application.templates[name] = f
+}
+
+// WithTemplate adds a template to the application.
+func WithTemplate(name string) *jse.Element {
+	checkApp()
+	if application.templates == nil {
+		application.templates = make(map[string]func() *jse.Element)
+	}
+	var v, ok = application.templates[name]
+	if !ok || v == nil {
+		panic(fmt.Sprintf("Template %s not found", name))
+	}
+	return v()
 }
 
 // WithNotFoundHandler sets the application's not found handler.
