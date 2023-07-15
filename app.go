@@ -22,10 +22,16 @@ func (f OnClickFunc) OnClick() {
 
 var application *app
 
+type lastTemplate struct {
+	name string
+	fun  func(args ...interface{}) *jse.Element
+}
+
 type app struct {
 	*jse.Element     `jsc:"rootElement"`
 	elementEmbedFunc func(page *jse.Element) *jse.Element              `jsc:"-"`
 	templates        map[string]func(args ...interface{}) *jse.Element `jsc:"-"`
+	lastUsedTemplate *lastTemplate                                     `jsc:"-"`
 	config           *Config                                           `jsc:"-"`
 	exit             chan error                                        `jsc:"-"`
 	Mux              *mux.Mux                                          `jsc:"-"`
@@ -418,9 +424,17 @@ func WithTemplate(name string, args ...interface{}) *jse.Element {
 	if application.templates == nil {
 		application.templates = make(map[string]func(args ...interface{}) *jse.Element)
 	}
+	// Some templates may be used more than once sequentially, we will cache the last used template.
+	if application.lastUsedTemplate != nil && application.lastUsedTemplate.name == name {
+		return application.lastUsedTemplate.fun(args...)
+	}
 	var v, ok = application.templates[name]
 	if !ok || v == nil {
 		panic(fmt.Sprintf("Template %s not found", name))
+	}
+	application.lastUsedTemplate = &lastTemplate{
+		name: name,
+		fun:  v,
 	}
 	return v(args...)
 }
