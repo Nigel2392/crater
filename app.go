@@ -206,17 +206,24 @@ func makeHandleFunc(h PageFunc) mux.HandleFunc {
 	return func(v mux.Variables) {
 		application.Element.InnerHTML("")
 		var canvas = jse.Div()
-		h(&Page{
+
+		var page = &Page{
 			Element:   canvas,
 			Variables: v,
 			Context:   context.Background(),
-		})
+		}
+
+		h(page)
 
 		if application.elementEmbedFunc != nil {
 			canvas = application.elementEmbedFunc(canvas)
 		}
 
 		application.Element.AppendChild(canvas)
+
+		if page.AfterRender != nil {
+			page.AfterRender(page)
+		}
 	}
 }
 
@@ -431,6 +438,18 @@ func WithTemplate(name string, args ...interface{}) *jse.Element {
 		fun:  v,
 	}
 	return v(args...)
+}
+
+// WithoutTemplate removes a template from the application.
+func WithoutTemplate(name string) {
+	checkApp()
+	if application.templates == nil {
+		return
+	}
+	if application.lastUsedTemplate != nil && application.lastUsedTemplate.name == name {
+		application.lastUsedTemplate = nil
+	}
+	delete(application.templates, name)
 }
 
 // WithNotFoundHandler sets the application's not found handler.

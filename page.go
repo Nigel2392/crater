@@ -26,6 +26,9 @@ type Page struct {
 	//
 	// This will be reset for each page render.
 	Context context.Context `jsc:"-"`
+
+	// A function which can be arbitrarily set, and will be called after the page is rendered.
+	AfterRender func(p *Page) `jsc:"-"`
 }
 
 func (p *Page) Clear() {
