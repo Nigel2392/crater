@@ -90,13 +90,7 @@ func New(c *Config) {
 	application.Mux.InvokeHandler(c.Flags.Has(F_CHANGE_PAGE_EACH_CLICK))
 	application.Mux.FirstPage(c.InitialPageURL)
 	if c.NotFoundHandler != nil {
-		application.Mux.NotFoundHandler = func(vars mux.Variables) {
-			c.NotFoundHandler(&Page{
-				Element:   application.Element,
-				Variables: vars,
-				Context:   context.Background(),
-			})
-		}
+		application.Mux.NotFoundHandler = makeHandleFunc(c.NotFoundHandler)
 	}
 }
 
@@ -442,13 +436,7 @@ func WithTemplate(name string, args ...interface{}) *jse.Element {
 // WithNotFoundHandler sets the application's not found handler.
 func WithNotFoundHandler(h PageFunc) {
 	checkApp()
-	application.Mux.NotFoundHandler = func(vars mux.Variables) {
-		h(&Page{
-			Element:   application.Element,
-			Variables: vars,
-			Context:   context.Background(),
-		})
-	}
+	application.Mux.NotFoundHandler = makeHandleFunc(h)
 }
 
 // WithOnResponseError sets the application's OnResponseError function.
