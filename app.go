@@ -29,17 +29,17 @@ type lastTemplate struct {
 
 type app struct {
 	*jse.Element     `jsc:"rootElement"`
-	elementEmbedFunc func(page *jse.Element) *jse.Element              `jsc:"-"`
-	templates        map[string]func(args ...interface{}) *jse.Element `jsc:"-"`
-	lastUsedTemplate *lastTemplate                                     `jsc:"-"`
-	config           *Config                                           `jsc:"-"`
-	exit             chan error                                        `jsc:"-"`
-	Mux              *mux.Mux                                          `jsc:"-"`
-	Loader           Loader                                            `jsc:"-"`
-	Logger           Logger                                            `jsc:"-"`
-	OnResponseError  func(error)                                       `jsc:"-"`
-	Messenger        Messenger                                         `jsc:"-"`
-	Websocket        *websocket.WebSocket                              `jsc:"-"`
+	elementEmbedFunc func(ctx context.Context, page *jse.Element) *jse.Element `jsc:"-"`
+	templates        map[string]func(args ...interface{}) *jse.Element         `jsc:"-"`
+	lastUsedTemplate *lastTemplate                                             `jsc:"-"`
+	config           *Config                                                   `jsc:"-"`
+	exit             chan error                                                `jsc:"-"`
+	Mux              *mux.Mux                                                  `jsc:"-"`
+	Loader           Loader                                                    `jsc:"-"`
+	Logger           Logger                                                    `jsc:"-"`
+	OnResponseError  func(error)                                               `jsc:"-"`
+	Messenger        Messenger                                                 `jsc:"-"`
+	Websocket        *websocket.WebSocket                                      `jsc:"-"`
 }
 
 // Helper function to check if the application has been initialized
@@ -216,7 +216,7 @@ func makeHandleFunc(h PageFunc) mux.HandleFunc {
 		h(page)
 
 		if application.elementEmbedFunc != nil {
-			canvas = application.elementEmbedFunc(canvas)
+			canvas = application.elementEmbedFunc(page.Context, canvas)
 		}
 
 		application.Element.AppendChild(canvas)
@@ -401,7 +401,7 @@ func WithMessenger(m Messenger) {
 // WithEmbed sets the application's embed function.
 //
 // This can be used to embed the page element, useful for navbars, footers etc.
-func WithEmbed(f func(root *jse.Element) *jse.Element) {
+func WithEmbed(f func(pageCtx context.Context, page *jse.Element) *jse.Element) {
 	checkApp()
 	application.elementEmbedFunc = f
 }

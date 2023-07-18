@@ -1,6 +1,8 @@
 package crater
 
 import (
+	"context"
+
 	"github.com/Nigel2392/jsext/v2"
 	"github.com/Nigel2392/jsext/v2/jse"
 )
@@ -51,7 +53,7 @@ type Config struct {
 	// Useful for navbars, footers etc.
 	//
 	// The page should be embedded into the element returned by this function.
-	EmbedFunc func(page *jse.Element) *jse.Element `jsc:"-"`
+	EmbedFunc func(ctx context.Context, page *jse.Element) *jse.Element `jsc:"-"`
 
 	// Templates which can be set, these can be used globally in the application.
 	//
