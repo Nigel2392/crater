@@ -10,6 +10,7 @@ import (
 	"github.com/Nigel2392/crater/messenger"
 	"github.com/Nigel2392/jsext/v2"
 	"github.com/Nigel2392/jsext/v2/jse"
+	"github.com/Nigel2392/jsext/v2/state"
 	"github.com/Nigel2392/jsext/v2/websocket"
 	"github.com/Nigel2392/mux"
 )
@@ -211,6 +212,7 @@ func makeHandleFunc(h PageFunc) mux.HandleFunc {
 			Element:   canvas,
 			Variables: v,
 			Context:   context.Background(),
+			State:     make(map[string]*state.StatefulElement),
 		}
 
 		h(page)

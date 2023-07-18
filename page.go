@@ -5,6 +5,7 @@ import (
 
 	"github.com/Nigel2392/crater/craterhttp"
 	"github.com/Nigel2392/jsext/v2/jse"
+	"github.com/Nigel2392/jsext/v2/state"
 	"github.com/Nigel2392/mux"
 )
 
@@ -30,6 +31,9 @@ type Page struct {
 
 	// A function which can be arbitrarily set, and will be called after the page is rendered.
 	AfterRender func(p *Page) `jsc:"-"`
+
+	// The state of the elements on the page.
+	State state.State `jsc:"-"`
 }
 
 func (p *Page) Clear() {
