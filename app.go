@@ -212,7 +212,7 @@ func makeHandleFunc(h PageFunc) mux.HandleFunc {
 			Element:   canvas,
 			Variables: v,
 			Context:   context.Background(),
-			State:     make(map[string]*state.StatefulElement),
+			State:     state.New(nil),
 		}
 
 		h(page)
