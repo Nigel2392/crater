@@ -10,6 +10,7 @@ import (
 
 type PageFunc func(p *Page)
 
+// Page represents a page in the application.
 type Page struct {
 	// The root element of the page
 	//
