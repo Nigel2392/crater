@@ -2,10 +2,10 @@ package craterhttp
 
 import (
 	"bytes"
-	"errors"
 	"reflect"
 	"strconv"
 
+	"github.com/Nigel2392/jsext/v2/errs"
 	"github.com/Nigel2392/jsext/v2/fetch"
 )
 
@@ -50,12 +50,12 @@ func (r *Response) String() string {
 
 func (r *Response) DecodeResponse(decoder Decoder, dst any) error {
 	if r == nil {
-		return errors.New("craterhttp.(Response).DecodeResponse: response is nil")
+		return errs.Error("craterhttp.(Response).DecodeResponse: response is nil")
 	}
 	if r.decodedData == nil {
 		var err = decoder.DecodeResponse(r.Response.Body, dst)
 		if err != nil {
-			return errors.New("craterhttp.(Response).DecodeResponse: error decoding response: " + err.Error())
+			return errs.Error("craterhttp.(Response).DecodeResponse: error decoding response: " + err.Error())
 		}
 		var v = reflect.ValueOf(dst)
 		if v.Kind() == reflect.Ptr {
@@ -70,7 +70,7 @@ func (r *Response) DecodeResponse(decoder Decoder, dst any) error {
 	}
 	var d = reflect.ValueOf(dst)
 	if d.Kind() != reflect.Ptr {
-		return errors.New("craterhttp.(Response).DecodeResponse: dst must be a pointer")
+		return errs.Error("craterhttp.(Response).DecodeResponse: dst must be a pointer")
 	}
 	d.Elem().Set(v)
 	return nil
