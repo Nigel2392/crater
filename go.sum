@@ -34,5 +34,9 @@ github.com/Nigel2392/jsext/v2 v2.6.1 h1:hZdvz9+4RTHeffy5jy5sB+lCx0Xk60nyQ1soWY1A
 github.com/Nigel2392/jsext/v2 v2.6.1/go.mod h1:KdxzZP8EEPhLqejZwrONzETO4xYVDCRdfjDvtw7dGTc=
 github.com/Nigel2392/jsext/v2 v2.6.2 h1:YAMGaZ+GaFBLMg1gjP3qaM2ZWd/pNdgyd8G3m8+czKU=
 github.com/Nigel2392/jsext/v2 v2.6.2/go.mod h1:KdxzZP8EEPhLqejZwrONzETO4xYVDCRdfjDvtw7dGTc=
+github.com/Nigel2392/jsext/v2 v2.6.3 h1:mxwitvKDkGJyNS+AhjUpFLtNeYHSIKThR7W9PFQf2Mw=
+github.com/Nigel2392/jsext/v2 v2.6.3/go.mod h1:KdxzZP8EEPhLqejZwrONzETO4xYVDCRdfjDvtw7dGTc=
+github.com/Nigel2392/jsext/v2 v2.6.4 h1:gxMUpOzbQU9YEurguRF8aOHQylNn386dkEEIduLvMF0=
+github.com/Nigel2392/jsext/v2 v2.6.4/go.mod h1:KdxzZP8EEPhLqejZwrONzETO4xYVDCRdfjDvtw7dGTc=
 github.com/Nigel2392/mux v1.1.4 h1:I4Nd/d1tVbwjgwLkoezgFhtzYW54ME7MtwOaQetb8OQ=
 github.com/Nigel2392/mux v1.1.4/go.mod h1:adQ+PBv5zT/CGxnWZPpOEoPths3apGNPGLQrhu3d69A=
