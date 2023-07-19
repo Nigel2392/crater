@@ -3,6 +3,6 @@ module github.com/Nigel2392/crater
 go 1.20
 
 require (
-	github.com/Nigel2392/jsext/v2 v2.6.6
+	github.com/Nigel2392/jsext/v2 v2.6.7
 	github.com/Nigel2392/mux v1.1.4
 )

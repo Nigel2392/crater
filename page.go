@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Nigel2392/crater/craterhttp"
+	"github.com/Nigel2392/jsext/v2/dom"
 	"github.com/Nigel2392/jsext/v2/jse"
 	"github.com/Nigel2392/jsext/v2/state"
 	"github.com/Nigel2392/mux"
@@ -42,4 +43,8 @@ func (p *Page) Clear() {
 
 func (p *Page) InnerElements(e ...*jse.Element) {
 	p.AppendChild(e...)
+}
+
+func (p *Page) Walk(nodetypes []dom.NodeType, fn func(e dom.Node)) {
+	dom.Walk(nodetypes, p.JSValue(), fn)
 }
