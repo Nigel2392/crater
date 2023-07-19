@@ -44,5 +44,7 @@ github.com/Nigel2392/jsext/v2 v2.6.6 h1:NDwcTqvl6tk/0sjS2q27VIfOFQuzaqjB0B/xkhg6
 github.com/Nigel2392/jsext/v2 v2.6.6/go.mod h1:KdxzZP8EEPhLqejZwrONzETO4xYVDCRdfjDvtw7dGTc=
 github.com/Nigel2392/jsext/v2 v2.6.7 h1:+yivscQTON8QgjkPthBQh8h5ja8ImFgNZCMWaxjTZUU=
 github.com/Nigel2392/jsext/v2 v2.6.7/go.mod h1:KdxzZP8EEPhLqejZwrONzETO4xYVDCRdfjDvtw7dGTc=
+github.com/Nigel2392/jsext/v2 v2.6.8 h1:fy3ttGN8eMAFOYuYrMm0pUfoB/FhYShRrcbGNSSVeZ4=
+github.com/Nigel2392/jsext/v2 v2.6.8/go.mod h1:KdxzZP8EEPhLqejZwrONzETO4xYVDCRdfjDvtw7dGTc=
 github.com/Nigel2392/mux v1.1.4 h1:I4Nd/d1tVbwjgwLkoezgFhtzYW54ME7MtwOaQetb8OQ=
 github.com/Nigel2392/mux v1.1.4/go.mod h1:adQ+PBv5zT/CGxnWZPpOEoPths3apGNPGLQrhu3d69A=
