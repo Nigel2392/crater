@@ -10,7 +10,6 @@ import (
 	"github.com/Nigel2392/crater/messenger"
 	"github.com/Nigel2392/jsext/v2"
 	"github.com/Nigel2392/jsext/v2/jse"
-	"github.com/Nigel2392/jsext/v2/state"
 	"github.com/Nigel2392/jsext/v2/websocket"
 	"github.com/Nigel2392/mux"
 )
@@ -25,13 +24,13 @@ var application *app
 
 type lastTemplate struct {
 	name string
-	fun  func(args ...interface{}) *jse.Element
+	fun  func(args ...interface{}) Marshaller
 }
 
 type app struct {
 	*jse.Element     `jsc:"rootElement"`
 	elementEmbedFunc func(ctx context.Context, page *jse.Element) *jse.Element `jsc:"-"`
-	templates        map[string]func(args ...interface{}) *jse.Element         `jsc:"-"`
+	templates        map[string]func(args ...interface{}) Marshaller           `jsc:"-"`
 	lastUsedTemplate *lastTemplate                                             `jsc:"-"`
 	config           *Config                                                   `jsc:"-"`
 	exit             chan error                                                `jsc:"-"`
@@ -203,6 +202,10 @@ func Handle(path string, h PageFunc) Route {
 	}
 }
 
+type Preloader interface {
+	Preload(p *Page)
+}
+
 func makeHandleFunc(h PageFunc) mux.HandleFunc {
 	return func(v mux.Variables) {
 		application.Element.InnerHTML("")
@@ -212,10 +215,13 @@ func makeHandleFunc(h PageFunc) mux.HandleFunc {
 			Element:   canvas,
 			Variables: v,
 			Context:   context.Background(),
-			State:     state.New(nil),
 		}
 
-		h(page)
+		if preloader, ok := h.(Preloader); ok {
+			preloader.Preload(page)
+		}
+
+		h.Serve(page)
 
 		if application.elementEmbedFunc != nil {
 			canvas = application.elementEmbedFunc(page.Context, canvas)
@@ -237,7 +243,7 @@ func makeHandleFunc(h PageFunc) mux.HandleFunc {
 func HandleEndpoint(path string, r craterhttp.RequestFunc, h PageFunc) {
 	checkApp()
 	LogDebugf("Adding handler for path: %s", path)
-	Handle(path, func(p *Page) {
+	Handle(path, ToPageFunc(func(p *Page) {
 		var (
 			request *craterhttp.Request
 			err     error
@@ -257,8 +263,8 @@ func HandleEndpoint(path string, r craterhttp.RequestFunc, h PageFunc) {
 		}
 		HideLoader()
 		LogDebug("Received fetch response...")
-		go h(p)
-	})
+		go h.Serve(p)
+	}))
 }
 
 // Show the application's loader.
@@ -409,10 +415,10 @@ func WithEmbed(f func(pageCtx context.Context, page *jse.Element) *jse.Element) 
 }
 
 // SetTemplate sets the application's template.
-func SetTemplate(name string, f func(args ...interface{}) *jse.Element) {
+func SetTemplate(name string, f func(args ...interface{}) Marshaller) {
 	checkApp()
 	if application.templates == nil {
-		application.templates = make(map[string]func(args ...interface{}) *jse.Element)
+		application.templates = make(map[string]func(args ...interface{}) Marshaller)
 	}
 	application.templates[name] = f
 }
@@ -422,10 +428,10 @@ func SetTemplate(name string, f func(args ...interface{}) *jse.Element) {
 // This function will panic if the template does not exist.
 //
 // The arguments passed to this function will be passed to the template function.
-func WithTemplate(name string, args ...interface{}) *jse.Element {
+func WithTemplate(name string, args ...interface{}) Marshaller {
 	checkApp()
 	if application.templates == nil {
-		application.templates = make(map[string]func(args ...interface{}) *jse.Element)
+		application.templates = make(map[string]func(args ...interface{}) Marshaller)
 	}
 	// Some templates may be used more than once sequentially, we will cache the last used template.
 	if application.lastUsedTemplate != nil && application.lastUsedTemplate.name == name {

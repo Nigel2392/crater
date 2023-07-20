@@ -10,7 +10,19 @@ import (
 	"github.com/Nigel2392/mux"
 )
 
-type PageFunc func(p *Page)
+type PageFunc interface {
+	Serve(p *Page)
+}
+
+func ToPageFunc(f func(p *Page)) PageFunc {
+	return pageFunc(f)
+}
+
+type pageFunc func(p *Page)
+
+func (f pageFunc) Serve(p *Page) {
+	f(p)
+}
 
 // Page represents a page in the application.
 type Page struct {
@@ -33,8 +45,10 @@ type Page struct {
 	// A function which can be arbitrarily set, and will be called after the page is rendered.
 	AfterRender func(p *Page) `jsc:"-"`
 
-	// The state of the elements on the page.
-	State state.State `jsc:"-"`
+	// State is an object where we can more easily keep track of and store state.
+	//
+	// This is useful for keeping track of things like whether or not a page is loading.
+	State *state.State `jsc:"-"`
 }
 
 func (p *Page) Clear() {

@@ -58,5 +58,5 @@ type Config struct {
 	// Templates which can be set, these can be used globally in the application.
 	//
 	// The arguments passed to the function are the arguments passed to the template.
-	Templates map[string]func(args ...interface{}) *jse.Element `jsc:"-"`
+	Templates map[string]func(args ...interface{}) Marshaller `jsc:"-"`
 }
