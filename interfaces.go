@@ -28,3 +28,27 @@ type (
 type Marshaller interface {
 	MarshalJS() js.Value
 }
+
+type PageFunc interface {
+	Serve(p *Page)
+}
+
+type Preloader interface {
+	Preload(p *Page)
+}
+
+type Initter interface {
+	Init()
+}
+
+type Templater interface {
+	Templates() map[string]func(args ...interface{}) Marshaller
+}
+
+type SockConfigurator interface {
+	SockOptions() (url string, opts SockOpts)
+}
+
+type Route interface {
+	Handle(path string, h PageFunc) Route
+}

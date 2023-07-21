@@ -10,6 +10,7 @@ import (
 	"github.com/Nigel2392/crater/messenger"
 	"github.com/Nigel2392/jsext/v2"
 	"github.com/Nigel2392/jsext/v2/jse"
+	"github.com/Nigel2392/jsext/v2/state"
 	"github.com/Nigel2392/jsext/v2/websocket"
 	"github.com/Nigel2392/mux"
 )
@@ -102,36 +103,44 @@ type SockOpts struct {
 	OnError   func(*websocket.WebSocket, jsext.Event)
 }
 
+func (o *SockOpts) OpenSock(url string) *websocket.WebSocket {
+	var sock *websocket.WebSocket
+	if o != nil || len(o.Protocols) > 0 {
+		sock = websocket.New(url, o.Protocols...)
+	} else {
+		sock = websocket.New(url)
+	}
+	return sock
+}
+
+func (o *SockOpts) Apply(sock *websocket.WebSocket) {
+	if o.OnOpen != nil {
+		sock.OnOpen(o.OnOpen)
+	}
+	if o.OnMessage != nil {
+		sock.OnMessage(o.OnMessage)
+	}
+	if o.OnClose != nil {
+		sock.OnClose(o.OnClose)
+	}
+	if o.OnError != nil {
+		sock.OnError(o.OnError)
+	}
+}
+
 // Open a websocket for the application.
 func OpenSock(url string, options *SockOpts) {
 	checkApp()
 
-	if application.Websocket == nil {
-		var sock *websocket.WebSocket
-		if options != nil {
-			sock = websocket.New(url, options.Protocols...)
-		} else {
-			sock = websocket.New(url)
-		}
-		application.Websocket = sock
+	if application.Websocket == nil || !application.Websocket.IsOpen() {
+		application.Websocket = options.OpenSock(url)
 	}
 
 	if options == nil {
 		return
 	}
 
-	if options.OnOpen != nil {
-		application.Websocket.OnOpen(options.OnOpen)
-	}
-	if options.OnMessage != nil {
-		application.Websocket.OnMessage(options.OnMessage)
-	}
-	if options.OnClose != nil {
-		application.Websocket.OnClose(options.OnClose)
-	}
-	if options.OnError != nil {
-		application.Websocket.OnError(options.OnError)
-	}
+	options.Apply(application.Websocket)
 }
 
 // Retrieve the application's path multiplexer.
@@ -144,6 +153,12 @@ func Mux() *mux.Mux {
 func Canvas() *jse.Element {
 	checkApp()
 	return application.Element
+}
+
+// Socket returns the application's websocket.
+func Socket() *websocket.WebSocket {
+	checkApp()
+	return application.Websocket
 }
 
 // Exit the application with an error.
@@ -165,10 +180,6 @@ func Run() error {
 func HandlePath(path string) {
 	checkApp()
 	application.Mux.HandlePath(path)
-}
-
-type Route interface {
-	Handle(path string, h PageFunc) Route
 }
 
 // The route used to handle child routes, and handle pages.
@@ -202,19 +213,38 @@ func Handle(path string, h PageFunc) Route {
 	}
 }
 
-type Preloader interface {
-	Preload(p *Page)
-}
-
 func makeHandleFunc(h PageFunc) mux.HandleFunc {
+
+	if h == nil {
+		panic("HandleFunc cannot be nil")
+	}
+
+	if initter, ok := h.(Initter); ok {
+		initter.Init()
+	}
+
+	if templater, ok := h.(Templater); ok {
+		for k, v := range templater.Templates() {
+			SetTemplate(k, v)
+		}
+	}
+
+	var ws *websocket.WebSocket
+	if wsOpts, ok := h.(SockConfigurator); ok {
+		var url, sockOpts = wsOpts.SockOptions()
+		ws = sockOpts.OpenSock(url)
+	}
+
 	return func(v mux.Variables) {
 		application.Element.InnerHTML("")
 		var canvas = jse.Div()
 
 		var page = &Page{
-			Element:   canvas,
+			Canvas:    canvas,
 			Variables: v,
 			Context:   context.Background(),
+			State:     state.New(canvas.MarshalJS()),
+			Sock:      ws,
 		}
 
 		if preloader, ok := h.(Preloader); ok {

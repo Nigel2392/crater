@@ -4,7 +4,6 @@ A simple and easy to use webassembly library which allows you to more easily wri
 
 Best to be compiled with TinyGo, this can save you a lot of size on the resulting binary.
 
-
 **Example file:**
 
 ```go
@@ -66,12 +65,12 @@ func main() {
 	})
 
 	// Handle the root path.
-	crater.Handle("/", func(p *crater.Page) {
+	crater.Handle("/", crater.ToPageFunc(func(p *crater.Page) {
 		p.Heading(1, "Hello World!")
-	})
+	}))
 
 	// Handle the hello path.
-	crater.Handle("/hello/<<name>>", func(p *crater.Page) {
+	crater.Handle("/hello/<<name>>", crater.ToPageFunc(func(p *crater.Page) {
 		p.Heading(1, "Hello "+p.Variables.Get("name"))
 
 		go func() {
@@ -83,10 +82,10 @@ func main() {
 				crater.HandlePath("/")
 			}))
 		}()
-	})
+	}))
 
 	// Easily handle a request to a server.
-	crater.HandleEndpoint("/test", craterhttp.NewRequestFunc("GET", "https://jsonplaceholder.typicode.com/todos/1", nil), func(p *crater.Page) {
+	crater.HandleEndpoint("/test", craterhttp.NewRequestFunc("GET", "https://jsonplaceholder.typicode.com/todos/1", nil), crater.ToPageFunc(func(p *crater.Page) {
 		var respM = make(map[string]interface{})
 		var err = p.DecodeResponse(decoder.JSONDecoder, &respM)
 		if err != nil {
@@ -95,7 +94,7 @@ func main() {
 		}
 		crater.LogInfof("Received response: %s", respM)
 		p.InnerHTML(fmt.Sprintf("%s", respM))
-	})
+	}))
 
 	// Run the application.
 	err = crater.Run()

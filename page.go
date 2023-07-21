@@ -7,13 +7,11 @@ import (
 	"github.com/Nigel2392/jsext/v2/dom"
 	"github.com/Nigel2392/jsext/v2/jse"
 	"github.com/Nigel2392/jsext/v2/state"
+	"github.com/Nigel2392/jsext/v2/websocket"
 	"github.com/Nigel2392/mux"
 )
 
-type PageFunc interface {
-	Serve(p *Page)
-}
-
+// Create a new page function from a which will be called when the page is rendered.
 func ToPageFunc(f func(p *Page)) PageFunc {
 	return pageFunc(f)
 }
@@ -29,7 +27,7 @@ type Page struct {
 	// The root element of the page
 	//
 	// This is the element which will act as a canvas for the page
-	*jse.Element `jsc:"root"`
+	Canvas *jse.Element `jsc:"root"`
 
 	// The response received from the server
 	*craterhttp.Response `jsc:"-"`
@@ -49,16 +47,19 @@ type Page struct {
 	//
 	// This is useful for keeping track of things like whether or not a page is loading.
 	State *state.State `jsc:"-"`
+
+	// Sock is a websocket connection to the server for the current page.
+	Sock *websocket.WebSocket `jsc:"-"`
 }
 
 func (p *Page) Clear() {
-	p.InnerHTML("")
+	p.Canvas.ClearInnerHTML()
 }
 
-func (p *Page) InnerElements(e ...*jse.Element) {
-	p.AppendChild(e...)
+func (p *Page) AppendChild(e ...*jse.Element) {
+	p.Canvas.AppendChild(e...)
 }
 
 func (p *Page) Walk(nodetypes []dom.NodeType, fn func(e dom.Node)) {
-	dom.Walk(nodetypes, p.JSValue(), fn)
+	dom.Walk(nodetypes, p.Canvas.JSValue(), fn)
 }
