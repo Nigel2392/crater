@@ -58,3 +58,5 @@ github.com/Nigel2392/jsext/v2 v2.7.4 h1:vGbrmW/HQXmNToQZe8AlqQ42lF+qbELVykPBLPsu
 github.com/Nigel2392/jsext/v2 v2.7.4/go.mod h1:KdxzZP8EEPhLqejZwrONzETO4xYVDCRdfjDvtw7dGTc=
 github.com/Nigel2392/mux v1.1.4 h1:I4Nd/d1tVbwjgwLkoezgFhtzYW54ME7MtwOaQetb8OQ=
 github.com/Nigel2392/mux v1.1.4/go.mod h1:adQ+PBv5zT/CGxnWZPpOEoPths3apGNPGLQrhu3d69A=
+github.com/Nigel2392/mux v1.1.5 h1:V/X+ktFC6i8G7K0xPPbV2/Wyh/8xDiosYbLot4AC58U=
+github.com/Nigel2392/mux v1.1.5/go.mod h1:adQ+PBv5zT/CGxnWZPpOEoPths3apGNPGLQrhu3d69A=

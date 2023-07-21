@@ -49,6 +49,14 @@ type SockConfigurator interface {
 	SockOptions() (url string, opts SockOpts)
 }
 
+type FullPage interface {
+	PageFunc
+	Preloader
+	Initter
+	Templater
+	SockConfigurator
+}
+
 type Route interface {
 	Handle(path string, h PageFunc) Route
 }
