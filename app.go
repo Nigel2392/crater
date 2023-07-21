@@ -241,7 +241,7 @@ func makeHandleFunc(h PageFunc) mux.HandleFunc {
 		application.Element.InnerHTML("")
 		var canvas = jse.Div()
 
-		if len(socks) > 0 && application.config.Flags.Has(F_CLOSE_SOCKS_EACH_PAGE) {
+		if application.config.Flags.Has(F_CLOSE_SOCKS_EACH_PAGE) {
 			socksMut.Lock()
 			for _, sock := range socks {
 				if sock != nil && sock.IsOpen() {
@@ -254,6 +254,7 @@ func makeHandleFunc(h PageFunc) mux.HandleFunc {
 		}
 
 		if wsOpts, ok := h.(SockConfigurator); ok && ws == nil {
+			fmt.Println("WS")
 			var url, sockOpts = wsOpts.SockOptions()
 			ws = sockOpts.OpenSock(url)
 			sockOpts.Apply(ws)
