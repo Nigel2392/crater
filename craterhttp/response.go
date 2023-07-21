@@ -2,6 +2,7 @@ package craterhttp
 
 import (
 	"bytes"
+	"io"
 	"reflect"
 	"strconv"
 
@@ -10,7 +11,7 @@ import (
 )
 
 type Decoder interface {
-	DecodeResponse(resp []byte, dst any) error
+	DecodeResponse(resp io.ReadCloser, dst any) error
 }
 
 type Response struct {

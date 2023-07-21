@@ -239,7 +239,6 @@ func makeHandleFunc(h PageFunc) mux.HandleFunc {
 
 	return func(v mux.Variables) {
 		application.Element.InnerHTML("")
-		var canvas = jse.Div()
 
 		if application.config.Flags.Has(F_CLOSE_SOCKS_EACH_PAGE) {
 			socksMut.Lock()
@@ -262,6 +261,14 @@ func makeHandleFunc(h PageFunc) mux.HandleFunc {
 			}
 		}
 
+		var canvas *jse.Element
+
+		if application.config.Flags.Has(F_USE_EMBEDDED_ELEMENT) {
+			canvas = jse.Div("crater-canvas")
+		} else {
+			canvas = application.Element
+		}
+
 		var page = &Page{
 			Canvas:    canvas,
 			Variables: v,
@@ -280,7 +287,7 @@ func makeHandleFunc(h PageFunc) mux.HandleFunc {
 			canvas = application.elementEmbedFunc(page.Context, canvas)
 		}
 
-		application.Element.AppendChild(canvas)
+		application.Element.Replace(canvas)
 
 		if page.AfterRender != nil {
 			page.AfterRender(page)
