@@ -254,7 +254,6 @@ func makeHandleFunc(h PageFunc) mux.HandleFunc {
 		}
 
 		if wsOpts, ok := h.(SockConfigurator); ok && ws == nil {
-			fmt.Println("WS")
 			var url, sockOpts = wsOpts.SockOptions()
 			ws = sockOpts.OpenSock(url)
 			sockOpts.Apply(ws)
