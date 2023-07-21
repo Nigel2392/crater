@@ -10,8 +10,19 @@ import (
 type CraterFlags uint32
 
 const (
+	// Change the page on each click of a link
+	//
+	// If not set, the page will only change when the URL changes.
 	F_CHANGE_PAGE_EACH_CLICK CraterFlags = 1 << iota
+
+	// Log each message sent with crater.InfoMessage(), crater.ErrorMessage() etc.
 	F_LOG_EACH_MESSAGE
+
+	// Close all websocket connections after switching pages
+	//
+	// If not set, websocket connections will be kept open
+	// and must be closed manually, or they will be reused for the handler it was set on.
+	F_CLOSE_SOCKS_EACH_PAGE
 )
 
 // Check if the flag is set

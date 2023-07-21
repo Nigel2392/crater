@@ -3,6 +3,7 @@ package crater
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/Nigel2392/crater/craterhttp"
@@ -213,6 +214,11 @@ func Handle(path string, h PageFunc) Route {
 	}
 }
 
+var (
+	socks    = make([]*websocket.WebSocket, 0)
+	socksMut = new(sync.Mutex)
+)
+
 func makeHandleFunc(h PageFunc) mux.HandleFunc {
 
 	if h == nil {
@@ -230,14 +236,31 @@ func makeHandleFunc(h PageFunc) mux.HandleFunc {
 	}
 
 	var ws *websocket.WebSocket
-	if wsOpts, ok := h.(SockConfigurator); ok {
-		var url, sockOpts = wsOpts.SockOptions()
-		ws = sockOpts.OpenSock(url)
-	}
 
 	return func(v mux.Variables) {
 		application.Element.InnerHTML("")
 		var canvas = jse.Div()
+
+		if len(socks) > 0 && application.config.Flags.Has(F_CLOSE_SOCKS_EACH_PAGE) {
+			socksMut.Lock()
+			for _, sock := range socks {
+				if sock != nil && sock.IsOpen() {
+					sock.Close(1000)
+				}
+			}
+			socks = make([]*websocket.WebSocket, 0)
+			socksMut.Unlock()
+			ws = nil
+		}
+
+		if wsOpts, ok := h.(SockConfigurator); ok && ws == nil {
+			var url, sockOpts = wsOpts.SockOptions()
+			ws = sockOpts.OpenSock(url)
+			sockOpts.Apply(ws)
+			if application.config.Flags.Has(F_CLOSE_SOCKS_EACH_PAGE) {
+				socks = append(socks, ws)
+			}
+		}
 
 		var page = &Page{
 			Canvas:    canvas,
