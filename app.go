@@ -219,7 +219,7 @@ var (
 	socksMut = new(sync.Mutex)
 )
 
-func makeHandleFunc(h PageFunc) mux.HandleFunc {
+func makeHandleFunc(h PageFunc) mux.Handler {
 
 	if h == nil {
 		panic("HandleFunc cannot be nil")
@@ -237,7 +237,7 @@ func makeHandleFunc(h PageFunc) mux.HandleFunc {
 
 	var ws *websocket.WebSocket
 
-	return func(v mux.Variables) {
+	return mux.NewHandler(func(v mux.Variables) {
 		application.Element.InnerHTML("")
 
 		if application.config.Flags.Has(F_CLOSE_SOCKS_EACH_PAGE) {
@@ -292,7 +292,7 @@ func makeHandleFunc(h PageFunc) mux.HandleFunc {
 		if page.AfterRender != nil {
 			page.AfterRender(page)
 		}
-	}
+	})
 }
 
 // Handle a path with a page function.
