@@ -68,6 +68,11 @@ func (l *SimpleLogger) Debug(args ...any) {
 	}
 }
 
+func (l *SimpleLogger) Write(p []byte) (n int, err error) {
+	l.InfoFunc(string(p))
+	return len(p), nil
+}
+
 var (
 	StdLogger = New(
 		logPrintln("ERROR"),
