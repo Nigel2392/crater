@@ -68,3 +68,5 @@ github.com/Nigel2392/mux v1.1.7 h1:nN6qRP6ydU8OxCioRyJ9L8ze5QWzg7mM0kmjTdObHOQ=
 github.com/Nigel2392/mux v1.1.7/go.mod h1:adQ+PBv5zT/CGxnWZPpOEoPths3apGNPGLQrhu3d69A=
 github.com/Nigel2392/mux v1.1.8 h1:qKTKWgRfP4BSYyvKn7LvVGtZKjsSt1yGeopbyOXg5Lc=
 github.com/Nigel2392/mux v1.1.8/go.mod h1:adQ+PBv5zT/CGxnWZPpOEoPths3apGNPGLQrhu3d69A=
+github.com/Nigel2392/mux v1.1.9 h1:FAhgr0WFJw9xlR2XwIWRxxgp2hI/aUylrDw7NarwEzI=
+github.com/Nigel2392/mux v1.1.9/go.mod h1:adQ+PBv5zT/CGxnWZPpOEoPths3apGNPGLQrhu3d69A=
