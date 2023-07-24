@@ -281,6 +281,7 @@ func makeHandleFunc(h PageFunc) mux.Handler {
 		}
 
 		if application.Element.Get("nodeName").String() == "BODY" {
+			application.Element.InnerHTML("")
 			application.Element.AppendChild(canvas)
 		} else {
 			application.Element.Replace(canvas)
