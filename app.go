@@ -261,14 +261,7 @@ func makeHandleFunc(h PageFunc) mux.Handler {
 			}
 		}
 
-		var canvas *jse.Element
-
-		if application.config.Flags.Has(F_USE_EMBEDDED_ELEMENT) {
-			canvas = jse.Div("crater-canvas")
-		} else {
-			canvas = application.Element
-		}
-
+		var canvas *jse.Element = jse.Div("crater-canvas")
 		var page = &Page{
 			Canvas:    canvas,
 			Variables: v,
@@ -287,7 +280,11 @@ func makeHandleFunc(h PageFunc) mux.Handler {
 			canvas = application.elementEmbedFunc(page.Context, canvas)
 		}
 
-		application.Element.Replace(canvas)
+		if application.Element.Get("nodeName").String() == "BODY" {
+			application.Element.AppendChild(canvas)
+		} else {
+			application.Element.Replace(canvas)
+		}
 
 		if page.AfterRender != nil {
 			page.AfterRender(page)

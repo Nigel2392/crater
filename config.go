@@ -23,11 +23,6 @@ const (
 	// If not set, websocket connections will be kept open
 	// and must be closed manually, or they will be reused for the handler it was set on.
 	F_CLOSE_SOCKS_EACH_PAGE
-
-	// Use the element where the page is embedded as the root element
-	//
-	// If not set, the canvas will be created and appended to the root element.
-	F_USE_EMBEDDED_ELEMENT
 )
 
 // Check if the flag is set
