@@ -55,10 +55,12 @@ func (c *Client) Do(r *Request) (*Response, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	if c.OnResponse != nil {
 		if err := c.OnResponse(resp); err != nil {
 			return nil, err
 		}
 	}
+
 	return resp, nil
 }
