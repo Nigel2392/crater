@@ -5,7 +5,7 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/Nigel2392/jsext/v2/errs"
+	"github.com/Nigel2392/crater/decoder"
 	"github.com/Nigel2392/jsext/v2/fetch"
 )
 
@@ -13,10 +13,7 @@ type Decoder interface {
 	DecodeResponse(resp io.ReadCloser, dst any) error
 }
 
-type Response struct {
-	*fetch.Response
-	Invoker *Request
-}
+type Response fetch.Response
 
 func (r *Response) String() string {
 	if r == nil {
@@ -47,13 +44,6 @@ func (r *Response) String() string {
 	return b.String()
 }
 
-func (r *Response) DecodeResponse(decoder Decoder, dst any) error {
-	if r == nil {
-		return errs.Error("craterhttp.(Response).DecodeResponse: response is nil")
-	}
-	var err = decoder.DecodeResponse(r.Response.Body, dst)
-	if err != nil {
-		return errs.Error("craterhttp.(Response).DecodeResponse: error decoding response: " + err.Error())
-	}
-	return nil
+func (r *Response) JSON(dst any) error {
+	return decoder.JSONDecoder.DecodeResponse(r.Body, dst)
 }

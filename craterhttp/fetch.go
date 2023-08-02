@@ -7,9 +7,5 @@ func Fetch(r *Request) (*Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	var response = &Response{
-		Response: resp,
-		Invoker:  r,
-	}
-	return response, nil
+	return (*Response)(resp), nil
 }

@@ -89,6 +89,11 @@ func New(c *Config) {
 		elementEmbedFunc: c.EmbedFunc,
 		templates:        c.Templates,
 	}
+
+	if c.InitialPageURL == "" {
+		c.InitialPageURL = "/"
+	}
+
 	application.Mux.InvokeHandler(c.Flags.Has(F_CHANGE_PAGE_EACH_CLICK))
 	application.Mux.FirstPage(c.InitialPageURL)
 	if c.NotFoundHandler != nil {
@@ -225,21 +230,29 @@ func makeHandleFunc(h PageFunc) mux.Handler {
 		panic("HandleFunc cannot be nil")
 	}
 
+	// Initialization of the handler, if it is supported.
+	//
+	// This is useful for initializing data on the handler.
 	if initter, ok := h.(Initter); ok {
 		initter.Init()
 	}
 
+	// Templates for the handler.
 	if templater, ok := h.(Templater); ok {
 		for k, v := range templater.Templates() {
 			SetTemplate(k, v)
 		}
 	}
 
+	// Websocket for this specific handler.
 	var ws *websocket.WebSocket
 
 	return mux.NewHandler(func(v mux.Variables) {
 		application.Element.InnerHTML("")
 
+		// Close all open sockets if the flag is set.
+		//
+		// However, do not close the global application's websocket.
 		if application.config.Flags.Has(F_CLOSE_SOCKS_EACH_PAGE) {
 			socksMut.Lock()
 			for _, sock := range socks {
@@ -252,6 +265,9 @@ func makeHandleFunc(h PageFunc) mux.Handler {
 			ws = nil
 		}
 
+		// If SockConfigurator is implemented, open a socket with the given options.
+		//
+		// This will run each time the page is visited && ws is nil.
 		if wsOpts, ok := h.(SockConfigurator); ok && ws == nil {
 			var url, sockOpts = wsOpts.SockOptions()
 			ws = sockOpts.OpenSock(url)
@@ -261,6 +277,7 @@ func makeHandleFunc(h PageFunc) mux.Handler {
 			}
 		}
 
+		// Set up the page.
 		var canvas *jse.Element = jse.Div("crater-canvas")
 		var page = &Page{
 			Canvas:    canvas,
@@ -270,23 +287,32 @@ func makeHandleFunc(h PageFunc) mux.Handler {
 			Sock:      ws,
 		}
 
+		// Initialization functions which will run each time the page is visited.
 		if preloader, ok := h.(Preloader); ok {
 			preloader.Preload(page)
 		}
 
+		// Serve the page, this will render elements onto the canvas.
 		h.Serve(page)
 
+		// Embed if needed.
+		//
+		// Pass context of the page to support logic based embedding.
 		if application.elementEmbedFunc != nil {
 			canvas = application.elementEmbedFunc(page.Context, canvas)
 		}
 
+		// If the node is a body element we cannot replace it, so we will just append the canvas.
 		if application.Element.Get("nodeName").String() == "BODY" {
 			application.Element.InnerHTML("")
 			application.Element.AppendChild(canvas)
 		} else {
+			// Replace the application's root element with the canvas.
 			application.Element.Replace(canvas)
 		}
 
+		// After render functions which will run
+		// each time the page is visited and the serve function returns.
 		if page.AfterRender != nil {
 			page.AfterRender(page)
 		}
@@ -321,7 +347,7 @@ func HandleEndpoint(path string, r craterhttp.RequestFunc, h PageFunc) {
 		}
 		HideLoader()
 		LogDebug("Received fetch response...")
-		go h.Serve(p)
+		h.Serve(p)
 	}))
 }
 
@@ -377,24 +403,32 @@ func LogDebug(s ...any) {
 }
 
 // Log an error in Sprintf format.
+//
+// This function will spin up a goroutine to log the message.
 func LogErrorf(format string, v ...interface{}) {
 	checkApp()
 	LogError(fmt.Sprintf(format, v...))
 }
 
 // Log an info message in Sprintf format.
+//
+// This function will spin up a goroutine to log the message.
 func LogInfof(format string, v ...interface{}) {
 	checkApp()
 	LogInfo(fmt.Sprintf(format, v...))
 }
 
 // Log a debug message in Sprintf format.
+//
+// This function will spin up a goroutine to log the message.
 func LogDebugf(format string, v ...interface{}) {
 	checkApp()
 	LogDebug(fmt.Sprintf(format, v...))
 }
 
 // An error message to be shown to the user.
+//
+// This function will spin up a goroutine to log the message.
 func ErrorMessage(d time.Duration, s ...any) {
 	checkApp()
 	if application.Messenger != nil {
@@ -408,6 +442,8 @@ func ErrorMessage(d time.Duration, s ...any) {
 }
 
 // A warning message to be shown to the user.
+//
+// This function will spin up a goroutine to log the message.
 func WarningMessage(d time.Duration, s ...any) {
 	checkApp()
 	if application.Messenger != nil {
@@ -421,6 +457,8 @@ func WarningMessage(d time.Duration, s ...any) {
 }
 
 // An info message to be shown to the user.
+//
+// This function will spin up a goroutine to log the message.
 func InfoMessage(d time.Duration, s ...any) {
 	checkApp()
 	if application.Messenger != nil {
@@ -434,6 +472,8 @@ func InfoMessage(d time.Duration, s ...any) {
 }
 
 // A success message to be shown to the user.
+//
+// This function will spin up a goroutine to log the message.
 func SuccessMessage(d time.Duration, s ...any) {
 	checkApp()
 	if application.Messenger != nil {

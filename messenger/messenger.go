@@ -8,9 +8,17 @@ import (
 
 // A messenger which will display messages to the user
 type Messenger interface {
+
+	// Display an error message
 	Error(duration time.Duration, args ...any)
+
+	// Display a warning message
 	Warning(duration time.Duration, args ...any)
+
+	// Display an info message
 	Info(duration time.Duration, args ...any)
+
+	// Display a success message
 	Success(duration time.Duration, args ...any)
 }
 

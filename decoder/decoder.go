@@ -1,8 +1,9 @@
 package decoder
 
 import (
-	"encoding/json"
 	"io"
+
+	"github.com/Nigel2392/jsext/v2/encoding"
 )
 
 type Decoder interface {
@@ -26,5 +27,5 @@ func (d *SimpleDecoder) DecodeResponse(b io.ReadCloser, dst any) error {
 }
 
 var (
-	JSONDecoder = New(json.Unmarshal)
+	JSONDecoder = New(encoding.DecodeJSON[[]byte])
 )
