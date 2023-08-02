@@ -220,6 +220,7 @@ func Handle(path string, h PageFunc) Route {
 }
 
 var (
+	// global websocket connections
 	socks    = make([]*websocket.WebSocket, 0)
 	socksMut = new(sync.Mutex)
 )
