@@ -14,7 +14,7 @@ var (
 )
 
 type HttpRequest struct {
-	RequestFunc func() *craterhttp.Request
+	RequestFunc func() (*craterhttp.Request, error)
 	OnSuccess   func(*craterhttp.Response) error
 	Client      *craterhttp.Client
 
@@ -33,8 +33,11 @@ func HttpRequestTask(option HttpRequest) tasker.Task {
 		option.Client = craterhttp.DefaultClient
 	}
 	t.Func = func(ctx context.Context) error {
-		var req = option.RequestFunc()
-		var resp, err = option.Client.Do(req)
+		var req, err = option.RequestFunc()
+		if err != nil {
+			return err
+		}
+		resp, err := option.Client.Do(req)
 		if err != nil {
 			return err
 		}
