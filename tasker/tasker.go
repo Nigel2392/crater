@@ -2,8 +2,9 @@ package tasker
 
 import (
 	"context"
-	"errors"
 	"time"
+
+	"github.com/Nigel2392/jsext/v2/errs"
 )
 
 type contextKey struct{}
@@ -32,9 +33,9 @@ type Tasker interface {
 }
 
 var (
-	ErrNoNameSpecified = errors.New("no name specified")
-	ErrDurationLTEZero = errors.New("duration less than or equal to zero")
-	ErrNotFound        = errors.New("task not found")
+	ErrNoNameSpecified = errs.Error("no name specified")
+	ErrDurationLTEZero = errs.Error("duration less than or equal to zero")
+	ErrNotFound        = errs.Error("task not found")
 )
 
 // Public facing task structure.
