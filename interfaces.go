@@ -29,6 +29,12 @@ type Marshaller interface {
 	MarshalJS() js.Value
 }
 
+type NullMarshaller struct{}
+
+func (NullMarshaller) MarshalJS() js.Value {
+	return js.Null()
+}
+
 type PageFunc interface {
 	Serve(p *Page)
 }

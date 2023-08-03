@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"syscall/js"
 	"time"
 
 	"github.com/Nigel2392/crater/craterhttp"
@@ -37,6 +38,7 @@ type app struct {
 	lastUsedTemplate *lastTemplate                                             `jsc:"-"`
 	config           *Config                                                   `jsc:"-"`
 	exit             chan error                                                `jsc:"-"`
+	globalFuncs      map[string]func(args ...interface{}) Marshaller           `jsc:"-"`
 	Mux              *mux.Mux                                                  `jsc:"-"`
 	Loader           Loader                                                    `jsc:"-"`
 	Logger           Logger                                                    `jsc:"-"`
@@ -84,6 +86,7 @@ func New(c *Config) {
 		Element:          (*jse.Element)(&c.RootElement),
 		exit:             make(chan error),
 		config:           c,
+		globalFuncs:      make(map[string]func(args ...interface{}) Marshaller),
 		Loader:           c.Loader,
 		Messenger:        c.Messenger,
 		Logger:           c.Logger,
@@ -531,6 +534,46 @@ func WithLogger(l Logger) {
 func WithMessenger(m Messenger) {
 	checkApp()
 	application.Messenger = m
+}
+
+// Add a global function to the application.
+//
+// This function will be available to all pages, and in the global javascript scope.
+//
+// Arguments (if any) are limited to the types supported by jsext.ToGo()
+func AddGlobal(name string, f func(args ...interface{}) Marshaller) (js.Func, error) {
+	if name == "" {
+		return js.Func{Value: js.Null()}, fmt.Errorf("name cannot be empty")
+	}
+	var _, ok = application.globalFuncs[name]
+	if ok {
+		return js.Func{Value: js.Null()}, fmt.Errorf("global function %s already exists", name)
+	}
+	application.globalFuncs[name] = f
+	var jsFunc = js.FuncOf(func(_ js.Value, args []js.Value) interface{} {
+		var (
+			iargs = make([]interface{}, len(args))
+		)
+		for i, v := range args {
+			iargs[i] = jsext.ToGo(v)
+		}
+		return f(iargs...).MarshalJS()
+	})
+	js.Global().Set(name, jsFunc)
+	return jsFunc, nil
+}
+
+// Call a global function.
+//
+// This function will panic if the function does not exist.
+//
+// Arguments (if any) are limited to the types supported by jsext.ToGo()
+func ExecGlobal(name string, args ...interface{}) Marshaller {
+	var f, ok = application.globalFuncs[name]
+	if !ok {
+		panic(fmt.Sprintf("global function %s does not exist", name))
+	}
+	return f(args...)
 }
 
 // WithEmbed sets the application's embed function.
