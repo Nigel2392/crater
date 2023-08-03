@@ -42,10 +42,11 @@ var (
 //
 // This can be used to configure the task to run.
 type Task struct {
-	Name     string
-	Func     func(ctx context.Context) error
-	OnError  func(error)
-	Duration time.Duration
+	Name      string
+	Func      func(ctx context.Context) error
+	OnError   func(error)
+	Duration  time.Duration
+	OnDequeue func(ctx context.Context) error
 }
 
 type tasker struct {
@@ -56,6 +57,10 @@ func New() Tasker {
 	return &tasker{
 		taskQueue: make(map[string]*task),
 	}
+}
+
+func (t *tasker) defaultCtx() context.Context {
+	return context.WithValue(context.Background(), TASKER_CONTEXT_KEY, t)
 }
 
 func (t *tasker) Enqueue(tsk Task) error {
@@ -73,7 +78,7 @@ func (t *tasker) Enqueue(tsk Task) error {
 	}
 	var executor = &task{
 		T:   &tsk,
-		ctx: context.WithValue(context.Background(), TASKER_CONTEXT_KEY, t),
+		ctx: t.defaultCtx(),
 	}
 	go executor.exec()
 	t.taskQueue[tsk.Name] = executor
@@ -93,9 +98,7 @@ func (t *tasker) After(task Task) error {
 	if task.Duration <= 0 {
 		// Execute immediately, in a goroutine in case it is a long running task.
 		go func() {
-			err = task.Func(
-				context.WithValue(context.Background(), TASKER_CONTEXT_KEY, t),
-			)
+			err = task.Func(t.defaultCtx())
 			if err != nil && task.OnError != nil {
 				task.OnError(err)
 			}
@@ -104,9 +107,7 @@ func (t *tasker) After(task Task) error {
 	}
 	go func() {
 		<-time.After(task.Duration)
-		err = task.Func(
-			context.WithValue(context.Background(), TASKER_CONTEXT_KEY, t),
-		)
+		err = task.Func(t.defaultCtx())
 		if err != nil && task.OnError != nil {
 			task.OnError(err)
 		}
@@ -121,6 +122,9 @@ func (t *tasker) Dequeue(taskName string) error {
 	if tsk, ok := t.taskQueue[taskName]; ok {
 		if tsk.ticker != nil {
 			tsk.ticker.Stop()
+		}
+		if tsk.T.OnDequeue != nil {
+			tsk.T.OnDequeue(tsk.ctx)
 		}
 		delete(t.taskQueue, taskName)
 	}

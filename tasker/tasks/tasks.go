@@ -2,7 +2,6 @@ package tasks
 
 import (
 	"context"
-	"time"
 
 	"github.com/Nigel2392/crater/craterhttp"
 	"github.com/Nigel2392/crater/tasker"
@@ -13,25 +12,29 @@ var (
 	ErrRequestNotOK = errs.Error("request not ok")
 )
 
-type HttpRequest struct {
+type HttpRequestOptions struct {
 	RequestFunc func(context.Context) (*craterhttp.Request, error)
 	OnSuccess   func(context.Context, *craterhttp.Response) error
 	Client      *craterhttp.Client
 
-	Name     string
-	Duration time.Duration
-	OnError  func(error)
+	tasker.Task
 }
 
-func HttpRequestTask(option HttpRequest) tasker.Task {
+func HttpRequest(option HttpRequestOptions) tasker.Task {
 	if option.Client == nil {
 		option.Client = craterhttp.DefaultClient
 	}
 	var t = tasker.Task{
-		Name:     option.Name,
-		OnError:  option.OnError,
-		Duration: option.Duration,
+		Name:      option.Name,
+		OnError:   option.OnError,
+		Duration:  option.Duration,
+		OnDequeue: option.OnDequeue,
 		Func: func(ctx context.Context) error {
+			if option.Func != nil {
+				if err := option.Func(ctx); err != nil {
+					return err
+				}
+			}
 			var req, err = option.RequestFunc(ctx)
 			if err != nil {
 				return err
