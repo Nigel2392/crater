@@ -14,8 +14,8 @@ var (
 )
 
 type HttpRequest struct {
-	RequestFunc func() (*craterhttp.Request, error)
-	OnSuccess   func(*craterhttp.Response) error
+	RequestFunc func(context.Context) (*craterhttp.Request, error)
+	OnSuccess   func(context.Context, *craterhttp.Response) error
 	Client      *craterhttp.Client
 
 	Name     string
@@ -24,30 +24,30 @@ type HttpRequest struct {
 }
 
 func HttpRequestTask(option HttpRequest) tasker.Task {
+	if option.Client == nil {
+		option.Client = craterhttp.DefaultClient
+	}
 	var t = tasker.Task{
 		Name:     option.Name,
 		OnError:  option.OnError,
 		Duration: option.Duration,
-	}
-	if option.Client == nil {
-		option.Client = craterhttp.DefaultClient
-	}
-	t.Func = func(ctx context.Context) error {
-		var req, err = option.RequestFunc()
-		if err != nil {
-			return err
-		}
-		resp, err := option.Client.Do(req)
-		if err != nil {
-			return err
-		}
-		if resp.StatusCode >= 400 {
-			return ErrRequestNotOK
-		}
-		if option.OnSuccess == nil {
-			return nil
-		}
-		return option.OnSuccess(resp)
+		Func: func(ctx context.Context) error {
+			var req, err = option.RequestFunc(ctx)
+			if err != nil {
+				return err
+			}
+			resp, err := option.Client.Do(req)
+			if err != nil {
+				return err
+			}
+			if resp.StatusCode >= 400 {
+				return ErrRequestNotOK
+			}
+			if option.OnSuccess == nil {
+				return nil
+			}
+			return option.OnSuccess(ctx, resp)
+		},
 	}
 	return t
 }
