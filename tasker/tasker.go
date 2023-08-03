@@ -85,7 +85,6 @@ func (t *tasker) After(task Task) error {
 		// Reset the task if it already exists.
 		if tsk, ok := t.taskQueue[task.Name]; ok {
 			tsk.T.Duration = task.Duration
-			tsk.reset()
 			go tsk.exec()
 			return nil
 		}
@@ -119,7 +118,9 @@ func (t *tasker) Dequeue(taskName string) error {
 		return ErrNoNameSpecified
 	}
 	if tsk, ok := t.taskQueue[taskName]; ok {
-		tsk.ticker.Stop()
+		if tsk.ticker != nil {
+			tsk.ticker.Stop()
+		}
 		delete(t.taskQueue, taskName)
 	}
 	return ErrNotFound
@@ -132,8 +133,7 @@ type task struct {
 }
 
 func (t *task) exec() {
-	t.ticker.Stop()
-	t.ticker = time.NewTicker(t.T.Duration)
+	t.reset()
 	var err error
 	for range t.ticker.C {
 		err = t.executeFunc()
@@ -154,6 +154,8 @@ func (t *task) executeFunc() error {
 }
 
 func (t *task) reset() {
-	t.ticker.Stop()
+	if t.ticker != nil {
+		t.ticker.Stop()
+	}
 	t.ticker = time.NewTicker(t.T.Duration)
 }
