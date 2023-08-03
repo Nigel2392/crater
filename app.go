@@ -549,6 +549,10 @@ func AddGlobal(name string, f func(args ...interface{}) Marshaller) (js.Func, er
 	if ok {
 		return js.Func{Value: js.Null()}, fmt.Errorf("global function %s already exists", name)
 	}
+	var globFunc = js.Global().Get(name)
+	if !globFunc.IsNull() || !globFunc.IsUndefined() {
+		return js.Func{Value: js.Null()}, fmt.Errorf("global function %s already exists", name)
+	}
 	application.globalFuncs[name] = f
 	var jsFunc = js.FuncOf(func(_ js.Value, args []js.Value) interface{} {
 		var (
@@ -573,9 +577,19 @@ func AddGlobal(name string, f func(args ...interface{}) Marshaller) (js.Func, er
 //
 // Arguments (if any) are limited to the types supported by jsext.ToGo()
 func ExecGlobal(name string, args ...interface{}) Marshaller {
+	if name == "" {
+		panic("name cannot be empty")
+	}
 	var f, ok = application.globalFuncs[name]
 	if !ok {
-		panic(fmt.Sprintf("global function %s does not exist", name))
+		var globFunc = js.Global().Get(name)
+		if globFunc.IsNull() || globFunc.IsUndefined() {
+			return nil
+		}
+		for i, v := range args {
+			args[i] = jsext.ValueOf(v)
+		}
+		return jsext.Value(globFunc.Invoke(args...))
 	}
 	return f(args...)
 }

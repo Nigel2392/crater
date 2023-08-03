@@ -8,5 +8,7 @@ github.com/Nigel2392/jsext/v2 v2.8.8 h1:4OcO6c/OV40hnW0f/s4Am1m9gaR2FpQj0ekdKpxS
 github.com/Nigel2392/jsext/v2 v2.8.8/go.mod h1:KdxzZP8EEPhLqejZwrONzETO4xYVDCRdfjDvtw7dGTc=
 github.com/Nigel2392/jsext/v2 v2.8.9 h1:8Nkc54OyRv5yHHwjjbFUpW/Mq66wz0z2BIF0HNyuNCw=
 github.com/Nigel2392/jsext/v2 v2.8.9/go.mod h1:KdxzZP8EEPhLqejZwrONzETO4xYVDCRdfjDvtw7dGTc=
+github.com/Nigel2392/jsext/v2 v2.9.0 h1:qWiEaB1SYzOG7unesM5MFLafyCvSB9rL2gnXeh07OD8=
+github.com/Nigel2392/jsext/v2 v2.9.0/go.mod h1:KdxzZP8EEPhLqejZwrONzETO4xYVDCRdfjDvtw7dGTc=
 github.com/Nigel2392/mux v1.1.9 h1:FAhgr0WFJw9xlR2XwIWRxxgp2hI/aUylrDw7NarwEzI=
 github.com/Nigel2392/mux v1.1.9/go.mod h1:adQ+PBv5zT/CGxnWZPpOEoPths3apGNPGLQrhu3d69A=
