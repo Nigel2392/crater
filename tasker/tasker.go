@@ -120,13 +120,15 @@ func (t *tasker) Dequeue(taskName string) error {
 		return ErrNoNameSpecified
 	}
 	if tsk, ok := t.taskQueue[taskName]; ok {
+		var err error
 		if tsk.ticker != nil {
 			tsk.ticker.Stop()
 		}
 		if tsk.T.OnDequeue != nil {
-			tsk.T.OnDequeue(tsk.ctx)
+			err = tsk.T.OnDequeue(tsk.ctx)
 		}
 		delete(t.taskQueue, taskName)
+		return err
 	}
 	return ErrNotFound
 }
