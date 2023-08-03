@@ -332,7 +332,7 @@ func makeHandleFunc(h PageFunc) mux.Handler {
 		}
 
 		// If the node is a body element we cannot replace it, so we will just append the canvas.
-		if application.Element.Get("nodeName").String() == "BODY" {
+		if application.Element.Get("nodeName").String() == "BODY" || application.config.Flags.Has(F_APPEND_CANVAS) {
 			application.Element.InnerHTML("")
 			application.Element.AppendChild(canvas)
 		} else {

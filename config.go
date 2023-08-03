@@ -23,6 +23,9 @@ const (
 	// If not set, websocket connections will be kept open
 	// and must be closed manually, or they will be reused for the handler it was set on.
 	F_CLOSE_SOCKS_EACH_PAGE
+
+	// Append the canvas to the application's element instead of replacing it
+	F_APPEND_CANVAS
 )
 
 // Check if the flag is set
