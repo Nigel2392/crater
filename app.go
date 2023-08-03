@@ -124,7 +124,7 @@ func After(task tasker.Task) error {
 // If there is an error, it will be of types:
 // - ErrNoNameSpecified
 // - ErrNotFound
-func Dequeue(task tasker.Task) error {
+func Dequeue(task string) error {
 	checkApp()
 	return application.Tasks.Dequeue(task)
 }

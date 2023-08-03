@@ -28,7 +28,7 @@ type Tasker interface {
 	// If there is an error, it will be of types:
 	// - ErrNoNameSpecified
 	// - ErrNotFound
-	Dequeue(task Task) error
+	Dequeue(taskName string) error
 }
 
 var (
@@ -65,7 +65,7 @@ func (t *tasker) Enqueue(tsk Task) error {
 		return ErrDurationLTEZero
 	}
 	if _, ok := t.taskQueue[tsk.Name]; ok {
-		var err = t.Dequeue(tsk)
+		var err = t.Dequeue(tsk.Name)
 		if err != nil {
 			return err
 		}
@@ -114,13 +114,13 @@ func (t *tasker) After(task Task) error {
 	return nil
 }
 
-func (t *tasker) Dequeue(task Task) error {
-	if task.Name == "" {
+func (t *tasker) Dequeue(taskName string) error {
+	if taskName == "" {
 		return ErrNoNameSpecified
 	}
-	if tsk, ok := t.taskQueue[task.Name]; ok {
+	if tsk, ok := t.taskQueue[taskName]; ok {
 		tsk.ticker.Stop()
-		delete(t.taskQueue, task.Name)
+		delete(t.taskQueue, taskName)
 	}
 	return ErrNotFound
 }
