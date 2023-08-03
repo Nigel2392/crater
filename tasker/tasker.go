@@ -1,9 +1,14 @@
 package tasker
 
 import (
+	"context"
 	"errors"
 	"time"
 )
+
+type contextKey struct{}
+
+var TASKER_CONTEXT_KEY = contextKey{}
 
 // Tasker interface.
 type Tasker interface {
@@ -37,7 +42,7 @@ var (
 // This can be used to configure the task to run.
 type Task struct {
 	Name     string
-	Func     func() error
+	Func     func(ctx context.Context) error
 	OnError  func(error)
 	Duration time.Duration
 }
@@ -65,7 +70,10 @@ func (t *tasker) Enqueue(tsk Task) error {
 			return err
 		}
 	}
-	var executor = &task{T: &tsk}
+	var executor = &task{
+		T:   &tsk,
+		ctx: context.WithValue(context.Background(), TASKER_CONTEXT_KEY, t),
+	}
 	go executor.exec()
 	t.taskQueue[tsk.Name] = executor
 	return nil
@@ -85,7 +93,9 @@ func (t *tasker) After(task Task) error {
 	if task.Duration <= 0 {
 		// Execute immediately, in a goroutine in case it is a long running task.
 		go func() {
-			err = task.Func()
+			err = task.Func(
+				context.WithValue(context.Background(), TASKER_CONTEXT_KEY, t),
+			)
 			if err != nil && task.OnError != nil {
 				task.OnError(err)
 			}
@@ -94,7 +104,9 @@ func (t *tasker) After(task Task) error {
 	}
 	go func() {
 		<-time.After(task.Duration)
-		err = task.Func()
+		err = task.Func(
+			context.WithValue(context.Background(), TASKER_CONTEXT_KEY, t),
+		)
 		if err != nil && task.OnError != nil {
 			task.OnError(err)
 		}
@@ -116,6 +128,7 @@ func (t *tasker) Dequeue(task Task) error {
 type task struct {
 	T      *Task
 	ticker *time.Ticker
+	ctx    context.Context
 }
 
 func (t *task) exec() {
@@ -131,7 +144,7 @@ func (t *task) exec() {
 }
 
 func (t *task) executeFunc() error {
-	var err = t.T.Func()
+	var err = t.T.Func(t.ctx)
 	if err != nil {
 		if t.T.OnError != nil {
 			t.T.OnError(err)
