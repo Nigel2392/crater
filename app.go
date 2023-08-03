@@ -105,6 +105,8 @@ func New(c *Config) {
 }
 
 // Enqueue a task periodically by name.
+// If there is an error, it will be of type:
+// - ErrNoNameSpecified
 func Enqueue(task tasker.Task) error {
 	checkApp()
 	return application.Tasks.Enqueue(task)
@@ -119,6 +121,9 @@ func After(task tasker.Task) error {
 }
 
 // Dequeue a task by name.
+// If there is an error, it will be of types:
+// - ErrNoNameSpecified
+// - ErrNotFound
 func Dequeue(task tasker.Task) error {
 	checkApp()
 	return application.Tasks.Dequeue(task)

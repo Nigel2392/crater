@@ -8,16 +8,29 @@ import (
 // Tasker interface.
 type Tasker interface {
 	// Enqueue a task periodically by name.
+	// If there is an error, it will be of type:
+	// - ErrNoNameSpecified
+	// - ErrDurationLTEZero
 	Enqueue(task Task) error
 
 	// Execute a task after the duration has passed, or immediately if the duration is 0.
+	// If duration is zero, the task will be executed immediately in a goroutine, but the function will return ErrDurationLTEZero.
 	// If the task name is provided, the task will be reset to the new duration.
 	// If the task name is not provided, the task will be executed once after the duration has passed.
 	After(task Task) error
 
 	// Dequeue a task by name.
+	// If there is an error, it will be of types:
+	// - ErrNoNameSpecified
+	// - ErrNotFound
 	Dequeue(task Task) error
 }
+
+var (
+	ErrNoNameSpecified = errors.New("no name specified")
+	ErrDurationLTEZero = errors.New("duration less than or equal to zero")
+	ErrNotFound        = errors.New("task not found")
+)
 
 // Public facing task structure.
 //
@@ -40,6 +53,12 @@ func New() Tasker {
 }
 
 func (t *tasker) Enqueue(tsk Task) error {
+	if tsk.Name == "" {
+		return ErrNoNameSpecified
+	}
+	if tsk.Duration <= 0 {
+		return ErrDurationLTEZero
+	}
 	if _, ok := t.taskQueue[tsk.Name]; ok {
 		var err = t.Dequeue(tsk)
 		if err != nil {
@@ -53,7 +72,9 @@ func (t *tasker) Enqueue(tsk Task) error {
 }
 
 func (t *tasker) After(task Task) error {
+	var err error
 	if task.Name != "" {
+		// Reset the task if it already exists.
 		if tsk, ok := t.taskQueue[task.Name]; ok {
 			tsk.T.Duration = task.Duration
 			tsk.reset()
@@ -62,20 +83,29 @@ func (t *tasker) After(task Task) error {
 		}
 	}
 	if task.Duration <= 0 {
-		task.Func()
+		// Execute immediately, in a goroutine in case it is a long running task.
+		go func() {
+			err = task.Func()
+			if err != nil && task.OnError != nil {
+				task.OnError(err)
+			}
+		}()
+		return ErrDurationLTEZero
 	}
 	go func() {
 		<-time.After(task.Duration)
-		task.Func()
+		err = task.Func()
+		if err != nil && task.OnError != nil {
+			task.OnError(err)
+		}
 	}()
 	return nil
 }
 
-var (
-	ErrNotFound = errors.New("task not found")
-)
-
 func (t *tasker) Dequeue(task Task) error {
+	if task.Name == "" {
+		return ErrNoNameSpecified
+	}
 	if tsk, ok := t.taskQueue[task.Name]; ok {
 		tsk.ticker.Stop()
 		delete(t.taskQueue, task.Name)
