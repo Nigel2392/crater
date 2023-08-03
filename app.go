@@ -9,6 +9,7 @@ import (
 	"github.com/Nigel2392/crater/craterhttp"
 	"github.com/Nigel2392/crater/logger"
 	"github.com/Nigel2392/crater/messenger"
+	"github.com/Nigel2392/crater/tasker"
 	"github.com/Nigel2392/jsext/v2"
 	"github.com/Nigel2392/jsext/v2/jse"
 	"github.com/Nigel2392/jsext/v2/state"
@@ -42,6 +43,7 @@ type app struct {
 	OnResponseError  func(error)                                               `jsc:"-"`
 	Messenger        Messenger                                                 `jsc:"-"`
 	Websocket        *websocket.WebSocket                                      `jsc:"-"`
+	Tasks            tasker.Tasker                                             `jsc:"-"`
 }
 
 // Helper function to check if the application has been initialized
@@ -88,6 +90,7 @@ func New(c *Config) {
 		OnResponseError:  c.OnResponseError,
 		elementEmbedFunc: c.EmbedFunc,
 		templates:        c.Templates,
+		Tasks:            tasker.New(),
 	}
 
 	if c.InitialPageURL == "" {
@@ -99,6 +102,26 @@ func New(c *Config) {
 	if c.NotFoundHandler != nil {
 		application.Mux.NotFoundHandler = makeHandleFunc(c.NotFoundHandler)
 	}
+}
+
+// Enqueue a task periodically by name.
+func Enqueue(task tasker.Task) error {
+	checkApp()
+	return application.Tasks.Enqueue(task)
+}
+
+// Execute a task after the duration has passed, or immediately if the duration is 0.
+// If the task name is provided, the task will be reset to the new duration.
+// If the task name is not provided, the task will be executed once after the duration has passed.
+func After(task tasker.Task) error {
+	checkApp()
+	return application.Tasks.After(task)
+}
+
+// Dequeue a task by name.
+func Dequeue(task tasker.Task) error {
+	checkApp()
+	return application.Tasks.Dequeue(task)
 }
 
 type SockOpts struct {
