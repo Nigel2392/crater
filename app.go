@@ -557,7 +557,11 @@ func AddGlobal(name string, f func(args ...interface{}) Marshaller) (js.Func, er
 		for i, v := range args {
 			iargs[i] = jsext.ToGo(v)
 		}
-		return f(iargs...).MarshalJS()
+		var m = f(iargs...)
+		if m == nil {
+			return js.Null()
+		}
+		return m.MarshalJS()
 	})
 	js.Global().Set(name, jsFunc)
 	return jsFunc, nil
