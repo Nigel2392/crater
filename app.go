@@ -552,7 +552,7 @@ func SetGlobal(key string, value interface{}, setGLobal bool) {
 	checkApp()
 	application.Data[key] = value
 	if setGLobal {
-		dataGlobal.Set(key, jsext.ValueOf(value))
+		dataGlobal.Set(key, jsext.ValueOf(value).MarshalJS())
 	}
 }
 
