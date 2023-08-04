@@ -2,6 +2,7 @@ package crater
 
 import (
 	"context"
+	"time"
 
 	"github.com/Nigel2392/jsext/v2"
 	"github.com/Nigel2392/jsext/v2/jse"
@@ -61,6 +62,9 @@ type Config struct {
 
 	// The initial page URL.
 	InitialPageURL string `jsc:"-"`
+
+	// HttpClientTimeout is the timeout for the http client.
+	HttpClientTimeout time.Duration `jsc:"-"`
 
 	// Allows you to embed the canvas written to inside of another canvas.
 	//

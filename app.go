@@ -47,6 +47,7 @@ type app struct {
 	Websocket        *websocket.WebSocket                                      `jsc:"-"`
 	Tasks            tasker.Tasker                                             `jsc:"-"`
 	Data             map[string]interface{}                                    `jsc:"-"`
+	Client           *craterhttp.Client                                        `jsc:"-"`
 }
 
 // Helper function to check if the application has been initialized
@@ -96,6 +97,7 @@ func New(c *Config) {
 		templates:        c.Templates,
 		Tasks:            tasker.New(),
 		Data:             make(map[string]interface{}),
+		Client:           craterhttp.NewClient(c.HttpClientTimeout),
 	}
 
 	if c.InitialPageURL == "" {
@@ -132,6 +134,15 @@ func After(task tasker.Task) error {
 func Dequeue(task string) error {
 	checkApp()
 	return application.Tasks.Dequeue(task)
+}
+
+// Client returns the application's http client.
+func Client() *craterhttp.Client {
+	checkApp()
+	if application.Client == nil {
+		application.Client = craterhttp.NewClient(application.config.HttpClientTimeout)
+	}
+	return application.Client
 }
 
 type SockOpts struct {
@@ -374,7 +385,7 @@ func HandleEndpoint(path string, r craterhttp.RequestFunc, h PageFunc) {
 			return
 		}
 		LogDebugf("Making fetch request to %s", request.URL)
-		p.Response, err = craterhttp.Fetch(request)
+		p.Response, err = Client().Do(request)
 		if checkErr(err) {
 			HideLoader()
 			return
@@ -561,6 +572,8 @@ func SetGlobal(key string, value interface{}, setGLobal bool) {
 // This function will look in the javascript global scope for the data if it is not found in the application's data.
 //
 // This means it must supported by jsext.ToGo()
+//
+// If T implements jsext.Unmarshaller, it will be used to unmarshal the javascript value.
 func GetGlobal[T any](key string) (ret T, ok bool) {
 	checkApp()
 	if v, ok := application.Data[key]; ok {
@@ -578,6 +591,14 @@ func GetGlobal[T any](key string) (ret T, ok bool) {
 	var goVal = jsext.ToGo(glob)
 	if goVal == nil {
 		return ret, false
+	}
+
+	var newGoVal = new(T)
+	if unmarshaller, ok := any(newGoVal).(jsext.Unmarshaller); ok {
+		if err := unmarshaller.UnmarshalJS(glob); err != nil {
+			return ret, false
+		}
+		return *newGoVal, true
 	}
 
 	ret, ok = goVal.(T)

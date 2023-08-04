@@ -51,6 +51,7 @@ func (c *Client) Do(r *Request) (*Response, error) {
 			}
 		}
 	}
+
 	var resp, err = Fetch(r)
 	if err != nil {
 		return nil, err
