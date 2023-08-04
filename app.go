@@ -548,7 +548,7 @@ func GlobalJSName(name string) {
 
 // Set global data for the application, and javascript global scope
 // If specified, but this means it must supported by jsext.ValueOf()
-func SetData(key string, value interface{}, setGLobal bool) {
+func SetGlobal(key string, value interface{}, setGLobal bool) {
 	checkApp()
 	application.Data[key] = value
 	if setGLobal {
@@ -561,7 +561,7 @@ func SetData(key string, value interface{}, setGLobal bool) {
 // This function will look in the javascript global scope for the data if it is not found in the application's data.
 //
 // This means it must supported by jsext.ToGo()
-func GetData[T any](key string) (ret T, ok bool) {
+func GetGlobal[T any](key string) (ret T, ok bool) {
 	checkApp()
 	if v, ok := application.Data[key]; ok {
 		if ret, ok = v.(T); ok {
@@ -590,7 +590,7 @@ func GetData[T any](key string) (ret T, ok bool) {
 // This function will be available to all pages, and in the global javascript scope.
 //
 // Arguments (if any) are limited to the types supported by jsext.ToGo()
-func AddGlobalFunc(name string, f func(args ...interface{}) Marshaller) (js.Func, error) {
+func SetGlobalFunc(name string, f func(args ...interface{}) Marshaller) (js.Func, error) {
 	if name == "" {
 		return js.Func{Value: js.Null()}, fmt.Errorf("name cannot be empty")
 	}
