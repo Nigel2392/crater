@@ -46,6 +46,7 @@ type app struct {
 	Messenger        Messenger                                                 `jsc:"-"`
 	Websocket        *websocket.WebSocket                                      `jsc:"-"`
 	Tasks            tasker.Tasker                                             `jsc:"-"`
+	Data             map[string]interface{}                                    `jsc:"-"`
 }
 
 // Helper function to check if the application has been initialized
@@ -94,6 +95,7 @@ func New(c *Config) {
 		elementEmbedFunc: c.EmbedFunc,
 		templates:        c.Templates,
 		Tasks:            tasker.New(),
+		Data:             make(map[string]interface{}),
 	}
 
 	if c.InitialPageURL == "" {
@@ -536,12 +538,59 @@ func WithMessenger(m Messenger) {
 	application.Messenger = m
 }
 
+var dataGlobal = js.Global()
+
+func GlobalJSName(name string) {
+	var object = js.Global().Get("Object").New()
+	dataGlobal = object
+	js.Global().Set(name, dataGlobal)
+}
+
+// Set global data for the application, and javascript global scope
+// If specified, but this means it must supported by jsext.ValueOf()
+func SetData(key string, value interface{}, setGLobal bool) {
+	checkApp()
+	application.Data[key] = value
+	if setGLobal {
+		dataGlobal.Set(key, jsext.ValueOf(value))
+	}
+}
+
+// Get global data for the application.
+//
+// This function will look in the javascript global scope for the data if it is not found in the application's data.
+//
+// This means it must supported by jsext.ToGo()
+func GetData[T any](key string) (ret T, ok bool) {
+	checkApp()
+	if v, ok := application.Data[key]; ok {
+		if ret, ok = v.(T); ok {
+			return ret, ok
+		}
+		return ret, false
+	}
+
+	var glob = dataGlobal.Get(key)
+	if glob.IsNull() || glob.IsUndefined() {
+		return ret, false
+	}
+
+	var goVal = jsext.ToGo(glob)
+	if goVal == nil {
+		return ret, false
+	}
+
+	ret, ok = goVal.(T)
+
+	return ret, ok
+}
+
 // Add a global function to the application.
 //
 // This function will be available to all pages, and in the global javascript scope.
 //
 // Arguments (if any) are limited to the types supported by jsext.ToGo()
-func AddGlobal(name string, f func(args ...interface{}) Marshaller) (js.Func, error) {
+func AddGlobalFunc(name string, f func(args ...interface{}) Marshaller) (js.Func, error) {
 	if name == "" {
 		return js.Func{Value: js.Null()}, fmt.Errorf("name cannot be empty")
 	}
@@ -549,7 +598,7 @@ func AddGlobal(name string, f func(args ...interface{}) Marshaller) (js.Func, er
 	if ok {
 		return js.Func{Value: js.Null()}, fmt.Errorf("global function %s already exists", name)
 	}
-	var globFunc = js.Global().Get(name)
+	var globFunc = dataGlobal.Get(name)
 	if !globFunc.IsNull() || !globFunc.IsUndefined() {
 		return js.Func{Value: js.Null()}, fmt.Errorf("global function %s already exists", name)
 	}
@@ -567,7 +616,7 @@ func AddGlobal(name string, f func(args ...interface{}) Marshaller) (js.Func, er
 		}
 		return m.MarshalJS()
 	})
-	js.Global().Set(name, jsFunc)
+	dataGlobal.Set(name, jsFunc)
 	return jsFunc, nil
 }
 
@@ -575,14 +624,15 @@ func AddGlobal(name string, f func(args ...interface{}) Marshaller) (js.Func, er
 //
 // This function will panic if the function does not exist.
 //
-// Arguments (if any) are limited to the types supported by jsext.ToGo()
-func ExecGlobal(name string, args ...interface{}) Marshaller {
+// Arguments (if any) are limited to the types supported by jsext.ValueOf() if it is bound to js.Global alone,
+// otherwise it is limited to the types supported by jsext.ToGo()
+func ExecGlobalFunc(name string, args ...interface{}) Marshaller {
 	if name == "" {
 		panic("name cannot be empty")
 	}
 	var f, ok = application.globalFuncs[name]
 	if !ok {
-		var globFunc = js.Global().Get(name)
+		var globFunc = dataGlobal.Get(name)
 		if globFunc.IsNull() || globFunc.IsUndefined() {
 			return nil
 		}
