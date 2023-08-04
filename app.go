@@ -596,11 +596,11 @@ func SetGlobalFunc(name string, f func(args ...interface{}) Marshaller) (js.Func
 	}
 	var _, ok = application.globalFuncs[name]
 	if ok {
-		return js.Func{Value: js.Null()}, fmt.Errorf("global function %s already exists", name)
+		return js.Func{Value: js.Null()}, fmt.Errorf("global function %s already exists in application globals", name)
 	}
 	var globFunc = dataGlobal.Get(name)
-	if !globFunc.IsNull() || !globFunc.IsUndefined() {
-		return js.Func{Value: js.Null()}, fmt.Errorf("global function %s already exists", name)
+	if !globFunc.IsNull() && !globFunc.IsUndefined() {
+		return js.Func{Value: js.Null()}, fmt.Errorf("global function %s already exists in javascript globals", name)
 	}
 	application.globalFuncs[name] = f
 	var jsFunc = js.FuncOf(func(_ js.Value, args []js.Value) interface{} {
