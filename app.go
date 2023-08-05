@@ -100,12 +100,10 @@ func New(c *Config) {
 		Client:           craterhttp.NewClient(c.HttpClientTimeout),
 	}
 
-	if c.InitialPageURL == "" {
-		c.InitialPageURL = "/"
-	}
-
 	application.Mux.InvokeHandler(c.Flags.Has(F_CHANGE_PAGE_EACH_CLICK))
-	application.Mux.FirstPage(c.InitialPageURL)
+	if c.InitialPageURL != "" {
+		application.Mux.FirstPage(c.InitialPageURL)
+	}
 	if c.NotFoundHandler != nil {
 		application.Mux.NotFoundHandler = makeHandleFunc(c.NotFoundHandler)
 	}
@@ -230,6 +228,12 @@ func Run() error {
 func HandlePath(path string) {
 	checkApp()
 	application.Mux.HandlePath(path)
+}
+
+// Redirect is a wrapper around HandlePath.
+func Redirect(path string) {
+	checkApp()
+	HandlePath(path)
 }
 
 // The route used to handle child routes, and handle pages.
@@ -555,6 +559,10 @@ func GlobalJSName(name string) {
 	var object = js.Global().Get("Object").New()
 	dataGlobal = object
 	js.Global().Set(name, dataGlobal)
+}
+
+func GlobalJS() js.Value {
+	return dataGlobal
 }
 
 // Set global data for the application, and javascript global scope
