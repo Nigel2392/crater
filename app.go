@@ -11,6 +11,7 @@ import (
 	"github.com/Nigel2392/crater/logger"
 	"github.com/Nigel2392/crater/messenger"
 	"github.com/Nigel2392/crater/tasker"
+	"github.com/Nigel2392/go-signals"
 	"github.com/Nigel2392/jsext/v2"
 	"github.com/Nigel2392/jsext/v2/jse"
 	"github.com/Nigel2392/jsext/v2/state"
@@ -36,6 +37,7 @@ type app struct {
 	elementEmbedFunc func(ctx context.Context, page *jse.Element) *jse.Element `jsc:"-"`
 	templates        map[string]func(args ...interface{}) Marshaller           `jsc:"-"`
 	lastUsedTemplate *lastTemplate                                             `jsc:"-"`
+	signals          *signals.Pool[any]                                        `jsc:"-"`
 	config           *Config                                                   `jsc:"-"`
 	exit             chan error                                                `jsc:"-"`
 	globalFuncs      map[string]func(args ...interface{}) Marshaller           `jsc:"-"`
@@ -87,6 +89,7 @@ func New(c *Config) {
 		Mux:              mux.New(),
 		Element:          (*jse.Element)(&c.RootElement),
 		exit:             make(chan error),
+		signals:          signals.NewPool[any](),
 		config:           c,
 		globalFuncs:      make(map[string]func(args ...interface{}) Marshaller),
 		Loader:           c.Loader,
@@ -139,6 +142,9 @@ func Client() *craterhttp.Client {
 	checkApp()
 	if application.Client == nil {
 		application.Client = craterhttp.NewClient(application.config.HttpClientTimeout)
+		application.Client.OnResponse = func(r *craterhttp.Response) error {
+			return application.signals.Send(SignalClientResponse, application.Client)
+		}
 	}
 	return application.Client
 }
@@ -188,7 +194,12 @@ func OpenSock(url string, options *SockOpts) {
 		return
 	}
 
+	if err := application.signals.Send(SignalSockConnected, application.Websocket); err != nil {
+		return
+	}
+
 	options.Apply(application.Websocket)
+
 }
 
 // Retrieve the application's path multiplexer.
@@ -215,13 +226,37 @@ func Exit(err error) {
 	application.exit <- err
 }
 
+// RegisterHook registers a hook with the application.
+func RegisterHook(name string, hook func(any) error) {
+	checkApp()
+	application.signals.Listen(name, func(_ signals.Signal[any], v any) error {
+		return hook(v)
+	})
+}
+
+// Send a signal through the application's hook system.
+func SendHook(name string, v any) error {
+	checkApp()
+	return application.signals.Send(name, v)
+}
+
 // Run the application.
 //
 // This function will block until the application exits.
 func Run() error {
 	checkApp()
+
+	if err := application.signals.Send(SignalRun, nil); err != nil {
+		return nil
+	}
+
 	application.Mux.ListenForChanges()
-	return <-application.exit
+
+	var exit = <-application.exit
+	if err := application.signals.Send(SignalExit, exit); err != nil {
+		return nil
+	}
+	return exit
 }
 
 // Change page to the given path.
@@ -293,10 +328,23 @@ func makeHandleFunc(h PageFunc) mux.Handler {
 		}
 	}
 
+	// Hooks for the handler.
+	if err := application.signals.Send(SignalHandlerAdded, h); err != nil {
+		return nil
+	}
+
 	// Websocket for this specific handler.
 	var ws *websocket.WebSocket
 
 	return mux.NewHandler(func(v mux.Variables) {
+		// The context of the page.
+		var ctx = context.Background()
+		// Hooks for the handler.
+		if err := application.signals.Send(SignalPageChange, nil); err != nil {
+			return
+		}
+
+		// Clear the application's root element.
 		application.Element.InnerHTML("")
 
 		// Close all open sockets if the flag is set.
@@ -331,7 +379,7 @@ func makeHandleFunc(h PageFunc) mux.Handler {
 		var page = &Page{
 			Canvas:    canvas,
 			Variables: v,
-			Context:   context.Background(),
+			Context:   ctx,
 			State:     state.New(canvas.MarshalJS()),
 			Sock:      ws,
 		}
@@ -364,6 +412,11 @@ func makeHandleFunc(h PageFunc) mux.Handler {
 		// each time the page is visited and the serve function returns.
 		if page.AfterRender != nil {
 			page.AfterRender(page)
+		}
+
+		// Hooks for the handler.
+		if err := application.signals.Send(SignalPageRendered, page); err != nil {
+			return
 		}
 	})
 }
@@ -671,6 +724,26 @@ func ExecGlobalFunc(name string, args ...interface{}) Marshaller {
 		return jsext.Value(globFunc.Invoke(args...))
 	}
 	return f(args...)
+}
+
+// Check if a global value or function exists.
+func GlobalExists(name string) bool {
+	if name == "" {
+		return false
+	}
+	var _, ok = application.globalFuncs[name]
+	if ok {
+		return true
+	}
+	_, ok = application.Data[name]
+	if ok {
+		return true
+	}
+	var globFunc = dataGlobal.Get(name)
+	if !globFunc.IsNull() && !globFunc.IsUndefined() {
+		return true
+	}
+	return false
 }
 
 // WithEmbed sets the application's embed function.
