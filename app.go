@@ -143,7 +143,7 @@ func Client() *craterhttp.Client {
 	if application.Client == nil {
 		application.Client = craterhttp.NewClient(application.config.HttpClientTimeout)
 		application.Client.OnResponse = func(r *craterhttp.Response) error {
-			return application.signals.Send(SignalClientResponse, application.Client)
+			return application.signals.CreateOrSend(SignalClientResponse, application.Client)
 		}
 	}
 	return application.Client
@@ -194,7 +194,7 @@ func OpenSock(url string, options *SockOpts) {
 		return
 	}
 
-	if err := application.signals.Send(SignalSockConnected, application.Websocket); err != nil {
+	if err := application.signals.CreateOrSend(SignalSockConnected, application.Websocket); err != nil {
 		return
 	}
 
@@ -237,7 +237,7 @@ func RegisterHook(name string, hook func(any) error) {
 // Send a signal through the application's hook system.
 func SendHook(name string, v any) error {
 	checkApp()
-	return application.signals.Send(name, v)
+	return application.signals.CreateOrSend(name, v)
 }
 
 // Run the application.
@@ -246,14 +246,14 @@ func SendHook(name string, v any) error {
 func Run() error {
 	checkApp()
 
-	if err := application.signals.Send(SignalRun, nil); err != nil {
+	if err := application.signals.CreateOrSend(SignalRun, nil); err != nil {
 		return nil
 	}
 
 	application.Mux.ListenForChanges()
 
 	var exit = <-application.exit
-	if err := application.signals.Send(SignalExit, exit); err != nil {
+	if err := application.signals.CreateOrSend(SignalExit, exit); err != nil {
 		return nil
 	}
 	return exit
@@ -329,7 +329,7 @@ func makeHandleFunc(h PageFunc) mux.Handler {
 	}
 
 	// Hooks for the handler.
-	if err := application.signals.Send(SignalHandlerAdded, h); err != nil {
+	if err := application.signals.CreateOrSend(SignalHandlerAdded, h); err != nil {
 		return nil
 	}
 
@@ -340,7 +340,7 @@ func makeHandleFunc(h PageFunc) mux.Handler {
 		// The context of the page.
 		var ctx = context.Background()
 		// Hooks for the handler.
-		if err := application.signals.Send(SignalPageChange, nil); err != nil {
+		if err := application.signals.CreateOrSend(SignalPageChange, nil); err != nil {
 			return
 		}
 
@@ -415,7 +415,7 @@ func makeHandleFunc(h PageFunc) mux.Handler {
 		}
 
 		// Hooks for the handler.
-		if err := application.signals.Send(SignalPageRendered, page); err != nil {
+		if err := application.signals.CreateOrSend(SignalPageRendered, page); err != nil {
 			return
 		}
 	})
