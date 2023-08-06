@@ -7,4 +7,4 @@ require (
 	github.com/Nigel2392/mux v1.1.9
 )
 
-require github.com/Nigel2392/go-signals v1.0.7
+require github.com/Nigel2392/go-signals v1.0.8
